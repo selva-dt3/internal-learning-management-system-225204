@@ -1,10 +1,8 @@
 /**
  * Employee dashboard with onboarding modal flow (NDA/CoC)
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ApiClient } from "../api/client";
-
-const client = new ApiClient();
 
 function OnboardingModal({ status, onAcknowledge, onClose }) {
   const needsNDA = !status?.nda_acknowledged;
@@ -40,19 +38,18 @@ function OnboardingModal({ status, onAcknowledge, onClose }) {
 }
 
 export default function EmployeeDashboard() {
+  const client = useMemo(() => new ApiClient(), []);
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) client.setToken(token);
     client
       .getOnboardingStatus()
       .then(setStatus)
       .catch(() => setErr("Failed to load onboarding status"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [client]);
 
   const onAcknowledge = async (doc) => {
     try {
@@ -68,7 +65,7 @@ export default function EmployeeDashboard() {
     <div>
       <h1>Employee Dashboard</h1>
       {err && <div className="error">{err}</div>}
-      <OnboardingModal status={status} onAcknowledge={onAcknowledge} onClose={()=>{}} />
+      <OnboardingModal status={status} onAcknowledge={onAcknowledge} onClose={() => {}} />
       <div className="content">
         <p>Welcome to your dashboard.</p>
       </div>

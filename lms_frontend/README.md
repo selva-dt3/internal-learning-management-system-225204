@@ -1,6 +1,6 @@
 # LMS Frontend (React) - Auth & Dashboards
 
-This frontend implements login and role-based dashboards (Admin, HR, Employee) with protected routing.
+This frontend implements login and role-based dashboards (Admin, HR, Employee) with protected routing, onboarding, analytics, and simple users/lessons management.
 
 ## Quick Start
 
@@ -39,27 +39,35 @@ Security note:
 
 ## Routing
 
-- /login: Login page
+- Distinct login routes:
+  - /login (generic), /login/admin (Admin/HR), /login/employee (Employee)
 - /dashboard: Role-based redirect to /dashboard/{admin|hr|employee}
 - /dashboard/admin: Admin dashboard (requires role=admin)
+  - /dashboard/admin/users: Users management (admin-only)
+  - /dashboard/admin/lessons: Lessons management (admin-only)
 - /dashboard/hr: HR dashboard (requires role=hr)
+  - /dashboard/hr/lessons: Lessons management (hr/admin)
 - /dashboard/employee: Employee dashboard (requires any authenticated user; visible to employee/admin/hr)
+- /analytics: Analytics summary (admin/hr only)
 
 Unauthorized behavior:
-- If unauthenticated, /dashboard* redirects to /login
+- If unauthenticated, protected routes redirect to /login
 - If authenticated but role mismatch, user is redirected to their own dashboard
 
 ## Code Structure
 
-- src/api/client.js — Axios client with interceptors
-- src/context/AuthContext.js — Auth state, login/logout
+- src/api/client.js — Axios client with interceptors and helper methods (users/lessons/analytics/onboarding)
+- src/context/AuthContext.js — Auth state, login/logout using api client
 - src/components/ProtectedRoute.js — Auth guard
 - src/components/RoleRoute.js — Role-based guard
 - src/layouts/DashboardLayout.js — Header/sidebar shell (+ CSS)
-- src/pages/LoginPage.js — Login screen
-- src/pages/AdminDashboard.js — Admin dashboard
-- src/pages/HRDashboard.js — HR dashboard
-- src/pages/EmployeeDashboard.js — Employee dashboard
+- src/pages/LoginPage.js — Login screen (used for distinct login routes)
+- src/pages/AdminDashboard.js — Admin dashboard with links to management pages
+- src/pages/HRDashboard.js — HR dashboard with links to lessons
+- src/pages/EmployeeDashboard.js — Employee dashboard with onboarding modal (NDA / CoC)
+- src/pages/UsersManagement.js — Admin-only users CRUD
+- src/pages/LessonsManagement.js — Admin/HR lessons CRUD
+- src/pages/Analytics.js — Admin/HR analytics summary
 - src/pages/DashboardHome.js — Redirects to correct role dashboard
 - src/routes/AppRoutes.js — Route definitions
 
@@ -84,3 +92,8 @@ Minimal CSS used; no heavy UI frameworks.
 - Backend endpoints expected:
   - POST /api/auth/login → { token, user: { id, email, role } }
   - GET /api/auth/me → { id, email, role }
+  - GET /api/onboarding/status → { nda_acknowledged, coc_acknowledged }
+  - POST /api/onboarding/acknowledgements { document } → updated status
+  - GET /api/analytics/summary → analytics numbers
+  - /api/users CRUD (admin only)
+  - /api/lessons CRUD (admin/hr)

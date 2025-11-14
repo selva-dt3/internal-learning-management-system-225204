@@ -9,6 +9,9 @@ import AdminDashboard from '../pages/AdminDashboard';
 import HRDashboard from '../pages/HRDashboard';
 import EmployeeDashboard from '../pages/EmployeeDashboard';
 import App from '../App';
+import UsersManagement from '../pages/UsersManagement';
+import LessonsManagement from '../pages/LessonsManagement';
+import Analytics from '../pages/Analytics';
 
 /**
  * PUBLIC_INTERFACE
@@ -23,7 +26,17 @@ export default function AppRoutes() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/template" element={<App />} />
 
+      {/* Distinct login routes as requested */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/login/admin" element={<LoginPage />} />
+      <Route path="/login/employee" element={<LoginPage />} />
+
+      {/* Public analytics route was previously at /analytics; protect and restrict to admin/hr */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<RoleRoute allowed={['admin', 'hr']} />}>
+          <Route path="/analytics" element={<Analytics />} />
+        </Route>
+      </Route>
 
       {/* Protected dashboard routes */}
       <Route element={<ProtectedRoute />}>
@@ -32,10 +45,13 @@ export default function AppRoutes() {
 
           <Route element={<RoleRoute allowed={['admin']} />}>
             <Route path="admin" element={<AdminDashboard />} />
+            <Route path="admin/users" element={<UsersManagement />} />
+            <Route path="admin/lessons" element={<LessonsManagement />} />
           </Route>
 
           <Route element={<RoleRoute allowed={['hr']} />}>
             <Route path="hr" element={<HRDashboard />} />
+            <Route path="hr/lessons" element={<LessonsManagement />} />
           </Route>
 
           <Route element={<RoleRoute allowed={['employee', 'admin', 'hr']} />}>

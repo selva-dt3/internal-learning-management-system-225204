@@ -1,23 +1,20 @@
 /**
  * Analytics summary for Admin/HR
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ApiClient } from "../api/client";
 
-const client = new ApiClient();
-
 export default function Analytics() {
+  const client = useMemo(() => new ApiClient(), []);
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) client.setToken(token);
     client
       .getAnalyticsSummary()
       .then(setData)
       .catch(() => setErr("Failed to load analytics"));
-  }, []);
+  }, [client]);
 
   if (err) return <div className="error">{err}</div>;
   if (!data) return <div>Loading...</div>;

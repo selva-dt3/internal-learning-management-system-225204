@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
  * PUBLIC_INTERFACE
  * LoginPage
  * Email/password login screen that calls AuthContext.login and redirects to /dashboard on success.
+ * Note: This page is used for /login, /login/admin, and /login/employee; role redirect happens post-login.
  */
 export default function LoginPage() {
   /** This is a public function. */

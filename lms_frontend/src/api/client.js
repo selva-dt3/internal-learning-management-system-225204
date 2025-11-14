@@ -1,70 +1,127 @@
 /**
- * Simple API client to interact with LMS backend.
+ * Simple API client (axios) to interact with LMS backend with auth header support.
  * PUBLIC_INTERFACE
+ */
+import axios from "axios";
+
+/** Resolve backend base URL from environment fallbacks */
+const BASE_URL =
+  process.env.REACT_APP_BACKEND_API_URL ||
+  process.env.VITE_BACKEND_API_URL ||
+  process.env.BACKEND_API_URL ||
+  "http://localhost:3001";
+
+/** Shared axios instance with baseURL and auth interceptor */
+export const api = axios.create({
+  baseURL: BASE_URL,
+  headers: { "Content-Type": "application/json" },
+});
+
+/** Token setter used by AuthContext */
+let accessToken = null;
+
+// PUBLIC_INTERFACE
+export function setAccessToken(token) {
+  /** Set or clear bearer token for the api client. */
+  accessToken = token || null;
+}
+
+/** Attach Authorization header if token is set */
+api.interceptors.request.use((config) => {
+  if (accessToken) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
+});
+
+/**
+ * PUBLIC_INTERFACE
+ * ApiClient - thin wrapper for convenience methods
  */
 export class ApiClient {
   /** Create client */
   constructor(baseUrl) {
     /** Base API URL (e.g., http://localhost:3001) */
-    this.baseUrl = baseUrl || process.env.REACT_APP_BACKEND_URL || "http://localhost:3001";
+    this.baseUrl = baseUrl || BASE_URL;
   }
 
+  /** PUBLIC_INTERFACE */
   setToken(token) {
-    this.token = token;
+    setAccessToken(token);
   }
 
-  headers() {
-    const h = { "Content-Type": "application/json" };
-    if (this.token) h["Authorization"] = `Bearer ${this.token}`;
-    return h;
-    }
-
-  /** Login with email and password. Returns access_token. PUBLIC_INTERFACE */
+  /** PUBLIC_INTERFACE
+   * Login with email and password. Returns { token, user }
+   */
   async login(email, password) {
-    const res = await fetch(`${this.baseUrl}/api/auth/login`, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) throw new Error("Login failed");
-    return res.json();
+    const res = await api.post(`/api/auth/login`, { email, password });
+    return res.data;
   }
 
-  /** Get current user profile. PUBLIC_INTERFACE */
+  /** PUBLIC_INTERFACE - Get current user */
   async me() {
-    const res = await fetch(`${this.baseUrl}/api/auth/me`, {
-      headers: this.headers(),
-    });
-    if (!res.ok) throw new Error("Unauthorized");
-    return res.json();
+    const res = await api.get(`/api/auth/me`);
+    return res.data;
   }
 
-  /** Get onboarding status for current user. PUBLIC_INTERFACE */
+  /** PUBLIC_INTERFACE - Onboarding status */
   async getOnboardingStatus() {
-    const res = await fetch(`${this.baseUrl}/api/onboarding/status`, {
-      headers: this.headers(),
-    });
-    if (!res.ok) throw new Error("Failed to get status");
-    return res.json();
+    const res = await api.get(`/api/onboarding/status`);
+    return res.data;
   }
 
-  /** Acknowledge a document ('nda' | 'coc'). PUBLIC_INTERFACE */
+  /** PUBLIC_INTERFACE - Acknowledge onboarding document: 'nda' | 'coc' */
   async acknowledge(document) {
-    const res = await fetch(`${this.baseUrl}/api/onboarding/acknowledgements`, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify({ document }),
-    });
-    if (!res.ok) throw new Error("Failed to acknowledge");
-    return res.json();
+    const res = await api.post(`/api/onboarding/acknowledgements`, { document });
+    return res.data;
   }
 
-  /** Get analytics summary (admin/hr only). PUBLIC_INTERFACE */
+  /** PUBLIC_INTERFACE - Analytics summary */
   async getAnalyticsSummary() {
-    const res = await fetch(`${this.baseUrl}/api/analytics/summary`, {
-      headers: this.headers(),
-    });
-    if (!res.ok) throw new Error("Failed to get analytics");
-    return res.json();
+    const res = await api.get(`/api/analytics/summary`);
+    return res.data;
+  }
+
+  /** PUBLIC_INTERFACE - Users CRUD (admin only) */
+  async listUsers() {
+    const res = await api.get(`/api/users`);
+    return res.data;
+  }
+  /** PUBLIC_INTERFACE */
+  async createUser(payload) {
+    const res = await api.post(`/api/users`, payload);
+    return res.data;
+  }
+  /** PUBLIC_INTERFACE */
+  async updateUser(id, payload) {
+    const res = await api.put(`/api/users/${id}`, payload);
+    return res.data;
+  }
+  /** PUBLIC_INTERFACE */
+  async deleteUser(id) {
+    const res = await api.delete(`/api/users/${id}`);
+    return res.data;
+  }
+
+  /** PUBLIC_INTERFACE - Lessons CRUD */
+  async listLessons() {
+    const res = await api.get(`/api/lessons`);
+    return res.data;
+  }
+  /** PUBLIC_INTERFACE */
+  async createLesson(payload) {
+    const res = await api.post(`/api/lessons`, payload);
+    return res.data;
+  }
+  /** PUBLIC_INTERFACE */
+  async updateLesson(id, payload) {
+    const res = await api.put(`/api/lessons/${id}`, payload);
+    return res.data;
+  }
+  /** PUBLIC_INTERFACE */
+  async deleteLesson(id) {
+    const res = await api.delete(`/api/lessons/${id}`);
+    return res.data;
   }
 }

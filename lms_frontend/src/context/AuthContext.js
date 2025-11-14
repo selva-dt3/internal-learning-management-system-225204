@@ -89,9 +89,7 @@ export function AuthProvider({ children }) {
 
       // Prefer using /api/auth/me to confirm role and freshness
       try {
-        const meRes = await api.get('/api/auth/me', {
-          headers: { Authorization: `Bearer ${t}` },
-        });
+        const meRes = await api.get('/api/auth/me');
         setCurrentUser(meRes.data || user || null);
       } catch (_e) {
         setCurrentUser(user || null);
