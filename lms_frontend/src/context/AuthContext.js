@@ -75,6 +75,7 @@ export function AuthProvider({ children }) {
   }, [token, currentUser]);
 
   // Centralized 401/403 handling: auto-logout and clear state
+  // onAuthError is provided by api/client and fires whenever an axios response has 401/403
   useEffect(() => {
     const unsub = onAuthError((status) => {
       if (status === 401 || status === 403) {
