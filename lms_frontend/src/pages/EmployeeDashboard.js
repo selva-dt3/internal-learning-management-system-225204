@@ -1,30 +1,77 @@
-import React from 'react';
-
 /**
- * PUBLIC_INTERFACE
- * EmployeeDashboard
- * Basic employee dashboard placeholder.
+ * Employee dashboard with onboarding modal flow (NDA/CoC)
  */
-export default function EmployeeDashboard() {
-  /** This is a public function. */
+import React, { useEffect, useState } from "react";
+import { ApiClient } from "../api/client";
+
+const client = new ApiClient();
+
+function OnboardingModal({ status, onAcknowledge, onClose }) {
+  const needsNDA = !status?.nda_acknowledged;
+  const needsCoC = !status?.coc_acknowledged;
+  const outstanding = [];
+  if (needsNDA) outstanding.push("nda");
+  if (needsCoC) outstanding.push("coc");
+
+  if (!outstanding.length) return null;
+
   return (
-    <div>
-      <h2 style={{ color: '#1E3A8A', marginTop: 0 }}>Employee Dashboard</h2>
-      <p>Welcome! View your courses and progress.</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginTop: 12 }}>
-        <Card title="Assigned Courses" value="6" />
-        <Card title="Completed" value="3" />
-        <Card title="Due This Week" value="2" />
+    <div className="modal">
+      <div className="modal-content">
+        <h2>Complete Onboarding</h2>
+        {needsNDA && (
+          <div className="onboarding-item">
+            <h3>NDA</h3>
+            <p>Please review the NDA and click acknowledge.</p>
+            <button onClick={() => onAcknowledge("nda")}>Acknowledge NDA</button>
+          </div>
+        )}
+        {needsCoC && (
+          <div className="onboarding-item">
+            <h3>Code of Conduct</h3>
+            <p>Please review the Code of Conduct and click acknowledge.</p>
+            <button onClick={() => onAcknowledge("coc")}>Acknowledge CoC</button>
+          </div>
+        )}
+        <button onClick={onClose}>Close</button>
       </div>
     </div>
   );
 }
 
-function Card({ title, value }) {
+export default function EmployeeDashboard() {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) client.setToken(token);
+    client
+      .getOnboardingStatus()
+      .then(setStatus)
+      .catch(() => setErr("Failed to load onboarding status"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const onAcknowledge = async (doc) => {
+    try {
+      const updated = await client.acknowledge(doc);
+      setStatus(updated);
+    } catch {
+      setErr("Failed to save acknowledgement");
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
   return (
-    <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 10, padding: 16 }}>
-      <div style={{ color: '#6B7280', fontSize: 12 }}>{title}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#111827' }}>{value}</div>
+    <div>
+      <h1>Employee Dashboard</h1>
+      {err && <div className="error">{err}</div>}
+      <OnboardingModal status={status} onAcknowledge={onAcknowledge} onClose={()=>{}} />
+      <div className="content">
+        <p>Welcome to your dashboard.</p>
+      </div>
     </div>
   );
 }

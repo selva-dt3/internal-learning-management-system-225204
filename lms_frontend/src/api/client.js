@@ -1,50 +1,70 @@
-import axios from 'axios';
-
 /**
- * Resolve backend base URL from environment.
- * CRA uses REACT_APP_ prefix; prefer REACT_APP_BACKEND_API_URL. If not set, fallback to VITE_BACKEND_API_URL for Vite-like envs.
- * Default to http://localhost:3001 if none provided.
- */
-const envBackend =
-  process.env.REACT_APP_BACKEND_API_URL ||
-  process.env.VITE_BACKEND_API_URL ||
-  process.env.BACKEND_API_URL ||
-  'http://localhost:3001';
-
-export const api = axios.create({
-  baseURL: envBackend,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Token holder in module scope; updated by AuthContext.
-let accessToken = null;
-
-/**
+ * Simple API client to interact with LMS backend.
  * PUBLIC_INTERFACE
- * setAccessToken
- * Sets the in-memory access token for API requests.
- * This avoids reading localStorage on every request for performance and security.
  */
-export function setAccessToken(token) {
-  /** This is a public function. */
-  accessToken = token || null;
+export class ApiClient {
+  /** Create client */
+  constructor(baseUrl) {
+    /** Base API URL (e.g., http://localhost:3001) */
+    this.baseUrl = baseUrl || process.env.REACT_APP_BACKEND_URL || "http://localhost:3001";
+  }
+
+  setToken(token) {
+    this.token = token;
+  }
+
+  headers() {
+    const h = { "Content-Type": "application/json" };
+    if (this.token) h["Authorization"] = `Bearer ${this.token}`;
+    return h;
+    }
+
+  /** Login with email and password. Returns access_token. PUBLIC_INTERFACE */
+  async login(email, password) {
+    const res = await fetch(`${this.baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) throw new Error("Login failed");
+    return res.json();
+  }
+
+  /** Get current user profile. PUBLIC_INTERFACE */
+  async me() {
+    const res = await fetch(`${this.baseUrl}/api/auth/me`, {
+      headers: this.headers(),
+    });
+    if (!res.ok) throw new Error("Unauthorized");
+    return res.json();
+  }
+
+  /** Get onboarding status for current user. PUBLIC_INTERFACE */
+  async getOnboardingStatus() {
+    const res = await fetch(`${this.baseUrl}/api/onboarding/status`, {
+      headers: this.headers(),
+    });
+    if (!res.ok) throw new Error("Failed to get status");
+    return res.json();
+  }
+
+  /** Acknowledge a document ('nda' | 'coc'). PUBLIC_INTERFACE */
+  async acknowledge(document) {
+    const res = await fetch(`${this.baseUrl}/api/onboarding/acknowledgements`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({ document }),
+    });
+    if (!res.ok) throw new Error("Failed to acknowledge");
+    return res.json();
+  }
+
+  /** Get analytics summary (admin/hr only). PUBLIC_INTERFACE */
+  async getAnalyticsSummary() {
+    const res = await fetch(`${this.baseUrl}/api/analytics/summary`, {
+      headers: this.headers(),
+    });
+    if (!res.ok) throw new Error("Failed to get analytics");
+    return res.json();
+  }
 }
-
-// Attach Authorization header if token exists
-api.interceptors.request.use((config) => {
-  if (accessToken) {
-    // eslint-disable-next-line no-param-reassign
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
-  return config;
-});
-
-// Response interceptor to surface 401 for logout handling externally
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    return Promise.reject(error);
-  }
-);

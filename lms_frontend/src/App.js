@@ -1,38 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
-import './App.css';
-import { Link } from 'react-router-dom';
+/**
+ * App entry with routes for Admin/HR vs Employee login and dashboards.
+ * PUBLIC_INTERFACE
+ */
+import React from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import LoginAdmin from "./pages/LoginAdmin";
+import LoginEmployee from "./pages/LoginEmployee";
+import AdminDashboard from "./pages/AdminDashboard";
+import HRDashboard from "./pages/HRDashboard";
+import EmployeeDashboard from "./pages/EmployeeDashboard";
+import Analytics from "./pages/Analytics";
 
-// PUBLIC_INTERFACE
-function App() {
-  /** Simple component retained for template showcase; not the main entry anymore. */
-  const [theme, setTheme] = useState('light');
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
-
+function Home() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <button
-          className="theme-toggle"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>Template screen. Proceed to login to access dashboards.</p>
-        <Link className="App-link" to="/login">Go to Login</Link>
-      </header>
+    <div>
+      <h1>Internal LMS</h1>
+      <nav>
+        <Link to="/login/admin">Admin/HR Login</Link> |{" "}
+        <Link to="/login/employee">Employee Login</Link>
+      </nav>
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route index element={<Home />} />
+        <Route path="/login/admin" element={<LoginAdmin />} />
+        <Route path="/login/employee" element={<LoginEmployee />} />
+        <Route path="/dashboard/admin" element={<AdminDashboard />} />
+        <Route path="/dashboard/hr" element={<HRDashboard />} />
+        <Route path="/dashboard/employee" element={<EmployeeDashboard />} />
+        <Route path="/analytics" element={<Analytics />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
