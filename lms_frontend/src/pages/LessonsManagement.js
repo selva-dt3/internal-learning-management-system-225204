@@ -26,7 +26,8 @@ export default function LessonsManagement() {
     setErr(null);
     try {
       const data = await client.listLessons();
-      setItems(Array.isArray(data) ? data : []);
+      const items = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+      setItems(items);
     } catch {
       setErr("Failed to load lessons");
     } finally {

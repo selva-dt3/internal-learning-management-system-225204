@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { api, setAccessToken } from '../api/client';
+import { api, setAccessToken, onAuthError } from '../api/client';
 
 /**
  * @typedef {Object} User
@@ -73,6 +73,19 @@ export function AuthProvider({ children }) {
       // ignore storage write failures
     }
   }, [token, currentUser]);
+
+  // Centralized 401/403 handling: auto-logout and clear state
+  useEffect(() => {
+    const unsub = onAuthError((status) => {
+      if (status === 401 || status === 403) {
+        setToken(null);
+        setAccessToken(null);
+        setCurrentUser(null);
+        try { localStorage.removeItem(STORAGE_KEY); } catch (_e) {}
+      }
+    });
+    return () => { if (unsub) unsub(); };
+  }, []);
 
   // PUBLIC_INTERFACE
   const login = useCallback(async (email, password) => {

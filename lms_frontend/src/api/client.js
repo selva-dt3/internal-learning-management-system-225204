@@ -20,7 +20,17 @@ export const api = axios.create({
 /** Token setter used by AuthContext */
 let accessToken = null;
 
-// PUBLIC_INTERFACE
+/** Simple in-memory subscribers to auth errors */
+const listeners = new Set();
+
+/** PUBLIC_INTERFACE */
+export function onAuthError(cb) {
+  /** Subscribe to 401/403 centralized handling */
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+
+/** PUBLIC_INTERFACE */
 export function setAccessToken(token) {
   /** Set or clear bearer token for the api client. */
   accessToken = token || null;
@@ -34,6 +44,23 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+/** Centralized response error handling for 401/403 */
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    const status = error?.response?.status;
+    if (status === 401 || status === 403) {
+      // notify subscribers (e.g., AuthContext) to logout or redirect
+      listeners.forEach((cb) => {
+        try {
+          cb(status, error?.response?.data);
+        } catch (_e) { /* no-op */ }
+      });
+    }
+    return Promise.reject(error);
+  }
+);
 
 /**
  * PUBLIC_INTERFACE
@@ -84,9 +111,9 @@ export class ApiClient {
   }
 
   /** PUBLIC_INTERFACE - Users CRUD (admin only) */
-  async listUsers() {
-    const res = await api.get(`/api/users`);
-    return res.data;
+  async listUsers(params = {}) {
+    const res = await api.get(`/api/users`, { params });
+    return res.data; // expected { items, count }
   }
   /** PUBLIC_INTERFACE */
   async createUser(payload) {
@@ -105,9 +132,9 @@ export class ApiClient {
   }
 
   /** PUBLIC_INTERFACE - Lessons CRUD */
-  async listLessons() {
-    const res = await api.get(`/api/lessons`);
-    return res.data;
+  async listLessons(params = {}) {
+    const res = await api.get(`/api/lessons`, { params });
+    return res.data; // expected { items, count }
   }
   /** PUBLIC_INTERFACE */
   async createLesson(payload) {
@@ -123,5 +150,36 @@ export class ApiClient {
   async deleteLesson(id) {
     const res = await api.delete(`/api/lessons/${id}`);
     return res.data;
+  }
+
+  /** PUBLIC_INTERFACE - Quizzes CRUD and submissions */
+  async listQuizzes(params = {}) {
+    const res = await api.get(`/api/quizzes`, { params });
+    return res.data; // { items, count }
+  }
+  /** PUBLIC_INTERFACE */
+  async createQuiz(payload) {
+    const res = await api.post(`/api/quizzes`, payload);
+    return res.data;
+  }
+  /** PUBLIC_INTERFACE */
+  async updateQuiz(id, payload) {
+    const res = await api.put(`/api/quizzes/${id}`, payload);
+    return res.data;
+  }
+  /** PUBLIC_INTERFACE */
+  async deleteQuiz(id) {
+    const res = await api.delete(`/api/quizzes/${id}`);
+    return res.data;
+  }
+  /** PUBLIC_INTERFACE */
+  async getQuiz(id) {
+    const res = await api.get(`/api/quizzes/${id}`);
+    return res.data;
+  }
+  /** PUBLIC_INTERFACE */
+  async submitQuiz(id, answers) {
+    const res = await api.post(`/api/quizzes/${id}/submit`, { answers });
+    return res.data; // e.g., { score, passed, feedback }
   }
 }

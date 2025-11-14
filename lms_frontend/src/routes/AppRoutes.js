@@ -12,6 +12,8 @@ import App from '../App';
 import UsersManagement from '../pages/UsersManagement';
 import LessonsManagement from '../pages/LessonsManagement';
 import Analytics from '../pages/Analytics';
+import QuizzesManagement from '../pages/QuizzesManagement';
+import QuizTaking from '../pages/QuizTaking';
 
 /**
  * PUBLIC_INTERFACE
@@ -31,10 +33,17 @@ export default function AppRoutes() {
       <Route path="/login/admin" element={<LoginPage />} />
       <Route path="/login/employee" element={<LoginPage />} />
 
-      {/* Public analytics route was previously at /analytics; protect and restrict to admin/hr */}
+      {/* Protected analytics */}
       <Route element={<ProtectedRoute />}>
         <Route element={<RoleRoute allowed={['admin', 'hr']} />}>
           <Route path="/analytics" element={<Analytics />} />
+        </Route>
+      </Route>
+
+      {/* Quiz taking (employee or higher) */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<RoleRoute allowed={['employee', 'admin', 'hr']} />}>
+          <Route path="/quizzes/:id/take" element={<QuizTaking />} />
         </Route>
       </Route>
 
@@ -47,11 +56,13 @@ export default function AppRoutes() {
             <Route path="admin" element={<AdminDashboard />} />
             <Route path="admin/users" element={<UsersManagement />} />
             <Route path="admin/lessons" element={<LessonsManagement />} />
+            <Route path="admin/quizzes" element={<QuizzesManagement />} />
           </Route>
 
           <Route element={<RoleRoute allowed={['hr']} />}>
             <Route path="hr" element={<HRDashboard />} />
             <Route path="hr/lessons" element={<LessonsManagement />} />
+            <Route path="hr/quizzes" element={<QuizzesManagement />} />
           </Route>
 
           <Route element={<RoleRoute allowed={['employee', 'admin', 'hr']} />}>

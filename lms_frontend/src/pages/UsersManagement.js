@@ -26,7 +26,8 @@ export default function UsersManagement() {
     setErr(null);
     try {
       const data = await client.listUsers();
-      setUsers(Array.isArray(data) ? data : []);
+      const items = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+      setUsers(items);
     } catch (e) {
       setErr("Failed to load users");
     } finally {

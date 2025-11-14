@@ -1,6 +1,6 @@
 # LMS Frontend (React) - Auth & Dashboards
 
-This frontend implements login and role-based dashboards (Admin, HR, Employee) with protected routing, onboarding, analytics, and simple users/lessons management.
+This frontend implements login and role-based dashboards (Admin, HR, Employee) with protected routing, onboarding, analytics, and simple users/lessons/quizzes management plus a quiz-taking experience.
 
 ## Quick Start
 
@@ -33,6 +33,7 @@ Note: Do not commit real environment values. Use .env and .env.local.
 - Stores returned JWT token (temporarily in localStorage for this iteration)
 - Calls GET /api/auth/me after login to confirm current user and role
 - Adds Authorization: Bearer <token> header automatically via axios interceptor
+- Centralized 401/403 handling via axios interceptor triggers logout
 
 Security note:
 - TODO: Move to httpOnly cookies and CSRF protection on backend; avoid localStorage for tokens in production.
@@ -45,10 +46,14 @@ Security note:
 - /dashboard/admin: Admin dashboard (requires role=admin)
   - /dashboard/admin/users: Users management (admin-only)
   - /dashboard/admin/lessons: Lessons management (admin-only)
+  - /dashboard/admin/quizzes: Quizzes management (admin/hr)
 - /dashboard/hr: HR dashboard (requires role=hr)
   - /dashboard/hr/lessons: Lessons management (hr/admin)
+  - /dashboard/hr/quizzes: Quizzes management (hr/admin)
 - /dashboard/employee: Employee dashboard (requires any authenticated user; visible to employee/admin/hr)
 - /analytics: Analytics summary (admin/hr only)
+- /quizzes/:id/take: Quiz taking for employees/admin/hr
+- Global ErrorBoundary wraps the app
 
 Unauthorized behavior:
 - If unauthenticated, protected routes redirect to /login
@@ -56,17 +61,20 @@ Unauthorized behavior:
 
 ## Code Structure
 
-- src/api/client.js — Axios client with interceptors and helper methods (users/lessons/analytics/onboarding)
-- src/context/AuthContext.js — Auth state, login/logout using api client
+- src/api/client.js — Axios client with interceptors and helper methods (users/lessons/quizzes/analytics/onboarding)
+- src/context/AuthContext.js — Auth state, login/logout using api client with 401/403 handling
+- src/components/ErrorBoundary.js — Global runtime error fallback
 - src/components/ProtectedRoute.js — Auth guard
 - src/components/RoleRoute.js — Role-based guard
 - src/layouts/DashboardLayout.js — Header/sidebar shell (+ CSS)
 - src/pages/LoginPage.js — Login screen (used for distinct login routes)
 - src/pages/AdminDashboard.js — Admin dashboard with links to management pages
-- src/pages/HRDashboard.js — HR dashboard with links to lessons
+- src/pages/HRDashboard.js — HR dashboard with links to lessons/quizzes
 - src/pages/EmployeeDashboard.js — Employee dashboard with onboarding modal (NDA / CoC)
-- src/pages/UsersManagement.js — Admin-only users CRUD
-- src/pages/LessonsManagement.js — Admin/HR lessons CRUD
+- src/pages/UsersManagement.js — Admin-only users CRUD (list endpoints expect {items, count})
+- src/pages/LessonsManagement.js — Admin/HR lessons CRUD (list endpoints expect {items, count})
+- src/pages/QuizzesManagement.js — Admin/HR quizzes CRUD (list endpoints expect {items, count})
+- src/pages/QuizTaking.js — Take a quiz and submit answers
 - src/pages/Analytics.js — Admin/HR analytics summary
 - src/pages/DashboardHome.js — Redirects to correct role dashboard
 - src/routes/AppRoutes.js — Route definitions
@@ -95,5 +103,6 @@ Minimal CSS used; no heavy UI frameworks.
   - GET /api/onboarding/status → { nda_acknowledged, coc_acknowledged }
   - POST /api/onboarding/acknowledgements { document } → updated status
   - GET /api/analytics/summary → analytics numbers
-  - /api/users CRUD (admin only)
-  - /api/lessons CRUD (admin/hr)
+  - /api/users CRUD (admin only) — GET returns { items, count }
+  - /api/lessons CRUD (admin/hr) — GET returns { items, count }
+  - /api/quizzes CRUD (admin/hr) — GET returns { items, count }, POST /api/quizzes/:id/submit to submit answers
