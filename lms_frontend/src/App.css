@@ -9,6 +9,10 @@
   --button-bg: #007bff;
   --button-text: #ffffff;
 }
+/* Ocean Professional palette reference:
+   --primary: #1E3A8A; --secondary: #F59E0B;
+   --surface: #FFFFFF; --background: #F3F4F6; --text: #111827;
+*/
 
 [data-theme="dark"] {
   /* Dark theme colors */

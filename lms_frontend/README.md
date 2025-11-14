@@ -1,82 +1,86 @@
-# Lightweight React Template for KAVIA
+# LMS Frontend (React) - Auth & Dashboards
 
-This project provides a minimal React template with a clean, modern UI and minimal dependencies.
+This frontend implements login and role-based dashboards (Admin, HR, Employee) with protected routing.
 
-## Features
+## Quick Start
 
-- **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
-- **Modern UI**: Clean, responsive design with KAVIA brand styling
-- **Fast**: Minimal dependencies for quick loading times
-- **Simple**: Easy to understand and modify
+1. Install dependencies
+   - npm install
 
-## Getting Started
+2. Configure environment
+   - Create a .env file using .env.example
+   - For CRA, set REACT_APP_BACKEND_API_URL
+   - Example:
+     REACT_APP_BACKEND_API_URL=http://localhost:3001
 
-In the project directory, you can run:
+3. Run the app
+   - npm start
+   - Visit http://localhost:3000
 
-### `npm start`
+## Environment Variables
 
-Runs the app in development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- REACT_APP_BACKEND_API_URL
+  - Base URL for backend (e.g., http://localhost:3001)
+- Fallbacks supported (if present):
+  - VITE_BACKEND_API_URL
+  - BACKEND_API_URL
 
-### `npm test`
+Note: Do not commit real environment values. Use .env and .env.local.
 
-Launches the test runner in interactive watch mode.
+## Auth Behavior
 
-### `npm run build`
+- POST /api/auth/login with email/password
+- Stores returned JWT token (temporarily in localStorage for this iteration)
+- Calls GET /api/auth/me after login to confirm current user and role
+- Adds Authorization: Bearer <token> header automatically via axios interceptor
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Security note:
+- TODO: Move to httpOnly cookies and CSRF protection on backend; avoid localStorage for tokens in production.
 
-## Customization
+## Routing
 
-### Colors
+- /login: Login page
+- /dashboard: Role-based redirect to /dashboard/{admin|hr|employee}
+- /dashboard/admin: Admin dashboard (requires role=admin)
+- /dashboard/hr: HR dashboard (requires role=hr)
+- /dashboard/employee: Employee dashboard (requires any authenticated user; visible to employee/admin/hr)
 
-The main brand colors are defined as CSS variables in `src/App.css`:
+Unauthorized behavior:
+- If unauthenticated, /dashboard* redirects to /login
+- If authenticated but role mismatch, user is redirected to their own dashboard
 
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
-```
+## Code Structure
 
-### Components
+- src/api/client.js — Axios client with interceptors
+- src/context/AuthContext.js — Auth state, login/logout
+- src/components/ProtectedRoute.js — Auth guard
+- src/components/RoleRoute.js — Role-based guard
+- src/layouts/DashboardLayout.js — Header/sidebar shell (+ CSS)
+- src/pages/LoginPage.js — Login screen
+- src/pages/AdminDashboard.js — Admin dashboard
+- src/pages/HRDashboard.js — HR dashboard
+- src/pages/EmployeeDashboard.js — Employee dashboard
+- src/pages/DashboardHome.js — Redirects to correct role dashboard
+- src/routes/AppRoutes.js — Route definitions
 
-This template uses pure HTML/CSS components instead of a UI framework. You can find component styles in `src/App.css`. 
+## Theming
 
-Common components include:
-- Buttons (`.btn`, `.btn-large`)
-- Container (`.container`)
-- Navigation (`.navbar`)
-- Typography (`.title`, `.subtitle`, `.description`)
+Ocean Professional palette:
+- primary #1E3A8A
+- secondary #F59E0B
+- surface #FFFFFF
+- background #F3F4F6
+- text #111827
 
-## Learn More
+Minimal CSS used; no heavy UI frameworks.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Testing
 
-### Code Splitting
+- App.test.js exists from template. Add tests for auth and routing as features mature.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Notes
 
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Ensure backend CORS is enabled for the frontend origin.
+- Backend endpoints expected:
+  - POST /api/auth/login → { token, user: { id, email, role } }
+  - GET /api/auth/me → { id, email, role }
